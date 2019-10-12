@@ -17,7 +17,7 @@ def typeform_webhook_endpoint(request):
         json_data = request.data
         print(json_data)
         answers_data = json_data['form_response']['answers']
-        identifier = json_data['form_response']['form_id']
+        identifier = json_data['event_id']
         answers = typeform.parse_answers(answers_data)
         email = answers.pop('email')
         session = models.Session.objects.create(session_id=identifier,
