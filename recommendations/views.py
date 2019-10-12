@@ -1,5 +1,6 @@
 from django.db import transaction
 from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import generics
 from rest_framework.decorators import api_view
@@ -28,6 +29,14 @@ def typeform_webhook_endpoint(request):
 
         update_recommendations(session.session_id)
     return HttpResponse('Created correctly')
+
+
+class LatestSessionList(generics.RetrieveAPIView):
+    serializer_class = serializers.SessionSerializer
+
+    def get_object(self):
+        email = self.request.query_params['email']
+        return models.Session.objects.filter(email=email).latest()
 
 
 class SessionList(generics.ListCreateAPIView):
