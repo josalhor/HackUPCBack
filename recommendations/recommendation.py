@@ -4,12 +4,21 @@ from typing import List
 
 from guatajaus.celery import app
 from recommendations import models
+from recommendations.scraping_api import request_location_segments, real_estate_location
 
 N_OPTIONS = 10
 
 
 def fetch_options(preferences: List[models.Preference]) -> List[models.RealEstate]:
-    return []  # TODO
+    segments = request_location_segments("lleida-capital")
+    real_estates = real_estate_location(segments, 3)
+    model_estate = []
+    for real_estate in real_estates:
+        obj, _ = models.RealEstate.objects.get_or_create(
+            id=real_estate.id
+        )
+        model_estate.append(obj)
+    return model_estate
 
 
 def get_n_best_options(n: int,
