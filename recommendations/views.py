@@ -25,7 +25,7 @@ def typeform_webhook_endpoint(request):
             models.Preference.objects.create(preference_name=answer,
                                              value=value, session=session)
 
-        update_recommendations(session.session_id)
+        update_recommendations.delay(session.session_id)
     return HttpResponse('Created correctly')
 
 
@@ -50,4 +50,4 @@ class PreferencesList(ListBulkCreateDestroyAPIView):
     def perform_create(self, serializer):
         session_id = self.kwargs['session_id']
         serializer.save(session_id=session_id)
-        update_recommendations(session_id)
+        update_recommendations.delay(session_id)
