@@ -1,12 +1,16 @@
 # -*- coding: utf-8 -*-
 import random
+import re
 import os
 from typing import List
 from django.db import transaction
+import numpy as np
+from sklearn.metrics import euclidean_distances
 
 from guatajaus.celery import app
 from recommendations import models
 from recommendations.scraping_api import request_location_segments, real_estate_location
+from .models import Preference
 
 N_OPTIONS = 10
 
@@ -53,8 +57,10 @@ def fetch_options(preferences: List[models.Preference]) -> List[models.RealEstat
 def get_n_best_options(n: int,
                        preferences: List[models.Preference],
                        available_options: List[models.RealEstate]) -> List[models.RealEstate]:
-    print(preferences)
-    return random.sample(available_options, n)  # TODO
+    vector = vector_user(preferences)
+    matrix_houses = list(map(vector_house, available_options))
+    recommendations = get_recommendation(vector, matrix_houses, available_options)
+    return recommendations
 
 NUM_PARAM = 5
 
@@ -63,16 +69,17 @@ def vector_user(preferences: List[models.Preference]):
     for pref in preferences:
         name = getattr(pref, 'preference_name')
         value = getattr(pref, 'value')
-        if name == 'location':
+        if name == 'city':
             lat, lng = get_coordinates_location(value)
             vector[0] = lat
             vector[1] = lng
-        elif name == 'm2':
-            vector[2] = float(value) # discretize choice
+        elif name == 'square_meters':
+            values = list(map(int, re.findall(r'\d+', value)))
+            vector[2] = sum(values) / len(values)
         elif name == 'bedrooms':
-            vector[3] = float(value)
-        elif name == 'bathroom':
-            vector[4] = float(value)
+            vector[3] = int(value)
+        elif name == 'bathrooms':
+            vector[4] = int(value)
     return vector
 
 def get_attr_def(obj, attr, default):
@@ -98,11 +105,11 @@ def get_recommendation(user_vector, matrix_houses, real_estates):
         new_matrix.append(line)
     matrix_houses = np.asarray(new_matrix)
     #TODO: Modify space to get rational recommendation
-    distances = euclidean_distances(matrix_houses, user_vector)
+    distances = euclidean_distances(matrix_houses, [user_vector])
     distances = distances.tolist()
     distances = list(zip(distances, real_estates))
-    ordered = distances.sort(key=(lambda x: x[0]))
-    return list(map(lambda x: x[1], ordered))
+    distances.sort(key=(lambda x: x[0]))
+    return list(map(lambda x: x[1], distances))
 
 @app.task
 def update_recommendations(session_id: int):
@@ -111,7 +118,7 @@ def update_recommendations(session_id: int):
     session.save()
 
     available_options = fetch_options(session.preferences)
-    recommendations = get_n_best_options(N_OPTIONS, session.preferences,
+    recommendations = get_n_best_options(N_OPTIONS, Preference.objects.filter(session=session),
                                          available_options)
     session.recommendations.add(*recommendations)
     session.status = models.Session.COMPLETED
