@@ -53,6 +53,7 @@ def fetch_options(preferences: List[models.Preference]) -> List[models.RealEstat
 def get_n_best_options(n: int,
                        preferences: List[models.Preference],
                        available_options: List[models.RealEstate]) -> List[models.RealEstate]:
+    print(preferences)
     return random.sample(available_options, n)  # TODO
 
 NUM_PARAM = 5
