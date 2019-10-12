@@ -1,13 +1,25 @@
 # -*- coding: utf-8 -*-
 import random
+import re
+import os
 from typing import List
 from django.db import transaction
+import numpy as np
+from sklearn.metrics import euclidean_distances
 
 from guatajaus.celery import app
 from recommendations import models
 from recommendations.scraping_api import request_location_segments, real_estate_location
+from .models import Preference
 
 N_OPTIONS = 10
+
+
+def get_coordinates_location(location):
+    code_api = os.environ['GEOCODE_API']
+    import geocoder
+    js = geocoder.mapquest(location, key=code_api).json
+    return js['lat'], js['lng']
 
 
 def fetch_options(preferences: List[models.Preference]) -> List[models.RealEstate]:
@@ -45,8 +57,59 @@ def fetch_options(preferences: List[models.Preference]) -> List[models.RealEstat
 def get_n_best_options(n: int,
                        preferences: List[models.Preference],
                        available_options: List[models.RealEstate]) -> List[models.RealEstate]:
-    return random.sample(available_options, n)  # TODO
+    vector = vector_user(preferences)
+    matrix_houses = list(map(vector_house, available_options))
+    recommendations = get_recommendation(vector, matrix_houses, available_options)
+    return recommendations
 
+NUM_PARAM = 5
+
+def vector_user(preferences: List[models.Preference]):
+    vector = [None] * NUM_PARAM
+    for pref in preferences:
+        name = getattr(pref, 'preference_name')
+        value = getattr(pref, 'value')
+        if name == 'city':
+            lat, lng = get_coordinates_location(value)
+            vector[0] = lat
+            vector[1] = lng
+        elif name == 'square_meters':
+            values = list(map(int, re.findall(r'\d+', value)))
+            vector[2] = sum(values) / len(values)
+        elif name == 'bedrooms':
+            vector[3] = int(value)
+        elif name == 'bathrooms':
+            vector[4] = int(value)
+    return vector
+
+def get_attr_def(obj, attr, default):
+    x = getattr(obj, attr)
+    if x:
+        return x
+    return default
+
+def vector_house(real_estate: models.RealEstate):
+    vector = [None] * NUM_PARAM
+    vector[0] = get_attr_def(real_estate, 'latitude', 0)
+    vector[1] = get_attr_def(real_estate, 'longitude', 0)
+    vector[2] = get_attr_def(real_estate, 'surface', 0)
+    vector[3] = get_attr_def(real_estate, 'bathrooms', 0)
+    vector[4] = get_attr_def(real_estate, 'rooms', 0)
+    return vector
+
+def get_recommendation(user_vector, matrix_houses, real_estates):
+    user_vector = np.asarray(user_vector)
+    new_matrix = []
+    for line in matrix_houses:
+        line = np.asarray(line)
+        new_matrix.append(line)
+    matrix_houses = np.asarray(new_matrix)
+    #TODO: Modify space to get rational recommendation
+    distances = euclidean_distances(matrix_houses, [user_vector])
+    distances = distances.tolist()
+    distances = list(zip(distances, real_estates))
+    distances.sort(key=(lambda x: x[0]))
+    return list(map(lambda x: x[1], distances))
 
 @app.task
 def update_recommendations(session_id: int):
@@ -55,7 +118,7 @@ def update_recommendations(session_id: int):
     session.save()
 
     available_options = fetch_options(session.preferences)
-    recommendations = get_n_best_options(N_OPTIONS, session.preferences,
+    recommendations = get_n_best_options(N_OPTIONS, Preference.objects.filter(session=session),
                                          available_options)
     session.recommendations.add(*recommendations)
     session.status = models.Session.COMPLETED
