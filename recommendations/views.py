@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import generics
@@ -11,17 +12,21 @@ from recommendations.recommendation import update_recommendations
 @csrf_exempt
 @api_view(http_method_names=['POST'])
 def typeform_webhook_endpoint(request):
-    json_data = request.data
-    answers_data = json_data['form_response']['answers']
-    answers = typeform.parse_answers(answers_data)
-    email = answers.pop('email')
-    session = models.Session.objects.create(email=email)
+    with transaction.atomic():
+        json_data = request.data
+        print(json_data)
+        answers_data = json_data['form_response']['answers']
+        identifier = json_data['form_response']['form_id']
+        answers = typeform.parse_answers(answers_data)
+        email = answers.pop('email')
+        session = models.Session.objects.create(session_id=identifier,
+                                                email=email)
 
-    for answer, value in answers:
-        models.Preference.objects.create(preference_name=answer, value=value,
-                                         session=session)
+        for answer, value in answers.items():
+            models.Preference.objects.create(preference_name=answer,
+                                             value=value, session=session)
 
-    update_recommendations(session.session_id)
+        update_recommendations(session.session_id)
     return HttpResponse('Created correctly')
 
 
