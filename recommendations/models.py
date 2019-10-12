@@ -4,7 +4,16 @@ from django.db import models
 
 
 class RealEstate(models.Model):
-    url = models.URLField(null=False)
+    id = models.IntegerField(primary_key=True)
+    promotionId = models.IntegerField(null=True)
+    #multimedia = models.JSONField(null=True)
+    rooms = models.IntegerField(null=True)
+    bathrooms = models.IntegerField(null=True)
+    surface = models.IntegerField(null=True)
+    ubication = models.CharField(null=True, max_length=150) #TODO: may not ben null
+    #locations = models.JSONField(null=True)
+    latitude = models.FloatField(null=True) #TODO: may not ben null
+    longitude = models.FloatField(null=True) #TODO: may not ben null
 
 
 class Session(models.Model):
