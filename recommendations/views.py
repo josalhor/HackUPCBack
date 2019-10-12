@@ -14,7 +14,6 @@ from recommendations.recommendation import update_recommendations
 def typeform_webhook_endpoint(request):
     with transaction.atomic():
         json_data = request.data
-        print(json_data)
         answers_data = json_data['form_response']['answers']
         identifier = json_data['form_response']['form_id']
         answers = typeform.parse_answers(answers_data)

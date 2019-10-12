@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import random
 from typing import List
+from django.db import transaction
 
 from guatajaus.celery import app
 from recommendations import models
@@ -14,10 +15,30 @@ def fetch_options(preferences: List[models.Preference]) -> List[models.RealEstat
     real_estates = real_estate_location(segments, 3)
     model_estate = []
     for real_estate in real_estates:
-        obj, _ = models.RealEstate.objects.get_or_create(
-            id=real_estate.id
-        )
-        model_estate.append(obj)
+
+        locations = real_estate.locations
+        if locations:
+            locations = locations[-1]
+        else:
+            locations = ''
+        with transaction.atomic():
+            obj, _ = models.RealEstate.objects.get_or_create(
+                id=real_estate.id,
+                promotion_id=real_estate.promotionId,
+                rooms=real_estate.rooms,
+                bathrooms=real_estate.bathrooms,
+                surface=real_estate.surface,
+                location=locations,
+                latitude=real_estate.latitude,
+                longitude=real_estate.longitude
+            )
+            ks = models.RealEstate.objects.get(id=real_estate.id)
+            for img in real_estate.multimedia:
+                _, _ = models.RealEstateImage.objects.get_or_create(
+                    real_estate_identifier=obj,
+                    image=img
+                )
+            model_estate.append(obj)
     return model_estate
 
 
