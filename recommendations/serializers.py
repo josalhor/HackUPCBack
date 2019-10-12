@@ -11,8 +11,15 @@ class PreferenceSerializer(serializers.ModelSerializer, BulkSerializerMixin):
         fields = ('preference_name', 'value')
 
 
+class RealEstateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.RealEstate
+        fields = '__all__'
+
+
 class SessionSerializer(serializers.ModelSerializer):
     preferences = PreferenceSerializer(read_only=True, many=True)
+    recommendations = RealEstateSerializer(read_only=True, many=True)
 
     class Meta:
         model = models.Session
