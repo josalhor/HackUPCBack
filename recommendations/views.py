@@ -1,4 +1,6 @@
 from rest_framework import generics
+from rest_framework_bulk import ListBulkCreateDestroyAPIView
+
 from recommendations import models, serializers
 
 
@@ -13,7 +15,7 @@ class SessionDetail(generics.RetrieveDestroyAPIView):
     serializer_class = serializers.SessionSerializer
 
 
-class PreferencesList(generics.ListCreateAPIView):
+class PreferencesList(ListBulkCreateDestroyAPIView):
     serializer_class = serializers.PreferenceSerializer
 
     def get_queryset(self):
