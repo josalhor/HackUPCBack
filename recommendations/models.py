@@ -1,19 +1,20 @@
-import uuid
-
 from django.db import models
 
 
 class RealEstate(models.Model):
     id = models.IntegerField(primary_key=True)
-    promotionId = models.IntegerField(null=True)
-    #multimedia = models.JSONField(null=True)
+    promotion_id = models.IntegerField(null=True)
     rooms = models.IntegerField(null=True)
     bathrooms = models.IntegerField(null=True)
     surface = models.IntegerField(null=True)
-    ubication = models.CharField(null=True, max_length=150) #TODO: may not ben null
-    #locations = models.JSONField(null=True)
-    latitude = models.FloatField(null=True) #TODO: may not ben null
-    longitude = models.FloatField(null=True) #TODO: may not ben null
+    location = models.CharField(null=True, max_length=150)
+    latitude = models.FloatField(null=True)
+    longitude = models.FloatField(null=True)
+
+
+class RealEstateImage(models.Model):
+    real_estate_identifier = models.ForeignKey(RealEstate, on_delete=models.CASCADE)
+    image = models.URLField(null=False)
 
 
 class Session(models.Model):
@@ -25,8 +26,10 @@ class Session(models.Model):
         (IN_PROGRESS, 'The session is being processed'),
         (COMPLETED, 'The session has been processed')
     )
-    session_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    session_id = models.CharField(max_length=40, primary_key=True)
     status = models.CharField(max_length=20, choices=STATUS, default=PENDING)
+    creation_time = models.DateTimeField(auto_now_add=True, blank=False, null=False)
+    email = models.EmailField(blank=False, null=False)
     recommendations = models.ManyToManyField(RealEstate)
 
 

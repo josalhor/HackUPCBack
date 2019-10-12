@@ -23,4 +23,6 @@ class SessionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Session
-        fields = '__all__'
+        fields = ('session_id', 'status', 'recommendations', 'email',
+                  'preferences')
+        read_only_fields = ('creation_time',)
