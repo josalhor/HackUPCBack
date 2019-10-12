@@ -8,3 +8,6 @@ requests_cache==0.5.2
 django_heroku==0.3.1
 gunicorn==19.9.0
 django-cors-headers==3.1.1
+geocoder==1.38.1
+numpy==1.17.2
+scikit-learn==0.21.3
