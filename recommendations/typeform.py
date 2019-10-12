@@ -19,7 +19,7 @@ field_to_preference_mapping = {
 def parse_answers(answers: List) -> Dict[str, str]:
     answers_parsed = dict()
     for answer in answers:
-        field_id = answer['field']['id']
+        field_id = answer['event_id']
         field_name, field_type = field_to_preference_mapping[field_id]
         if field_type is 'choice':
             value = answer[field_type]['label']
