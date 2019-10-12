@@ -1,5 +1,5 @@
 from django.db import transaction
-from django.http import HttpResponse
+from django.http import HttpResponse, Http404
 from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import generics
@@ -36,7 +36,10 @@ class LatestSessionList(generics.RetrieveAPIView):
 
     def get_object(self):
         email = self.request.query_params['email']
-        return models.Session.objects.filter(email=email).latest()
+        try:
+            return models.Session.objects.filter(email=email).latest()
+        except models.Session.DoesNotExist:
+            raise Http404
 
 
 class SessionList(generics.ListCreateAPIView):
