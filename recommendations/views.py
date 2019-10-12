@@ -2,6 +2,7 @@ from rest_framework import generics
 from rest_framework_bulk import ListBulkCreateDestroyAPIView
 
 from recommendations import models, serializers
+from recommendations.recommendation import update_recommendations
 
 
 class SessionList(generics.ListCreateAPIView):
@@ -25,3 +26,4 @@ class PreferencesList(ListBulkCreateDestroyAPIView):
     def perform_create(self, serializer):
         session_id = self.kwargs['session_id']
         serializer.save(session_id=session_id)
+        update_recommendations(session_id)
