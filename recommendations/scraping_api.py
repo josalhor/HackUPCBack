@@ -35,6 +35,10 @@ def request_location_segments(location):
     js = out.json()
     return js
 
+def fotocasa_url_by_id(id):
+    single_json = api_query_single(id)
+    return f'https://www.fotocasa.es{single_json["detail"]["es"]}'
+
 def real_estate_location(json_location_segments, page_number):
     from recommendations.middle_to_model import RealEstate
     js = api_query(json_location_segments, page_number)
