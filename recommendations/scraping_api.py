@@ -1,8 +1,9 @@
+import os
 from bs4 import BeautifulSoup
 import requests
 import requests_cache
 
-requests_cache.install_cache()
+requests_cache.install_cache(include_get_headers=False)
 
 
 HEADERS = {
@@ -38,3 +39,43 @@ def real_estate_location(json_location_segments, page_number):
     from recommendations.middle_to_model import RealEstate
     js = api_query(json_location_segments, page_number)
     return list(map(RealEstate, js['realEstates']))
+
+
+def get_features_photo(url):
+    #We've removed real_estate_global_v2, since we're not using it yet
+    request_location = f'https://api-eu.restb.ai/vision/v2/multipredict?model_id=re_features_v3,re_appliances&image_url={url}&client_key={os.environ["RESTBAI_API"]}'
+    js = requests.get(request_location).json()
+    assert js['error'] == 'false'
+    solutions = js['response']['solutions']
+    features = []
+    for detection in solutions['re_features_v3']['detections']:
+        content = detection['label']
+        features.append(content)
+
+    appliances = []
+    for detection in solutions['re_appliances']['detections']:
+        content = detection['label']
+        appliances.append(content)
+    
+    return features, appliances
+
+def count_feature_photos(urls):
+    MAX_PER_IMAGE = 4
+    TOTAL_MAX = 8
+    features = 0
+    appliances = 0
+    url_with_errors = 0
+    for url in urls:
+        try:
+            f, a = get_features_photo(url)
+        except Exception:
+            url_with_errors += 1
+            print(f'Error on restbai on url {url}')
+            continue
+        features += min(len(f), MAX_PER_IMAGE)
+        appliances += min(len(a), MAX_PER_IMAGE)
+    number_succes_urls = len(urls) - url_with_errors
+    assert number_succes_urls >= 0
+    if number_succes_urls == 0:
+        return 0, 0
+    return min(features / number_succes_urls, TOTAL_MAX), min(appliances / number_succes_urls, TOTAL_MAX)
