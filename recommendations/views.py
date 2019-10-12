@@ -1,21 +1,33 @@
-from django.http import JsonResponse
+from django.db import transaction
+from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import generics
 from rest_framework.decorators import api_view
 from rest_framework_bulk import ListBulkCreateDestroyAPIView
 
-from recommendations import models, serializers
+from recommendations import models, serializers, typeform
 from recommendations.recommendation import update_recommendations
 
 
 @csrf_exempt
 @api_view(http_method_names=['POST'])
-def typeform_webhook_endpoint(request, *args, **kwargs):
-    json_data = request.data
-    # TODO parse form data
-    print(json_data)
+def typeform_webhook_endpoint(request):
+    with transaction.atomic():
+        json_data = request.data
+        print(json_data)
+        answers_data = json_data['form_response']['answers']
+        identifier = json_data['form_response']['form_id']
+        answers = typeform.parse_answers(answers_data)
+        email = answers.pop('email')
+        session = models.Session.objects.create(session_id=identifier,
+                                                email=email)
 
-    return JsonResponse(json_data)
+        for answer, value in answers.items():
+            models.Preference.objects.create(preference_name=answer,
+                                             value=value, session=session)
+
+        update_recommendations(session.session_id)
+    return HttpResponse('Created correctly')
 
 
 class SessionList(generics.ListCreateAPIView):
