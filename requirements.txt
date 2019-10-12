@@ -7,3 +7,4 @@ requests==2.22.0
 requests_cache==0.5.2
 django_heroku==0.3.1
 gunicorn==19.9.0
+django-cors-headers==3.1.1
