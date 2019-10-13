@@ -13,21 +13,24 @@ from recommendations.recommendation import update_recommendations
 @csrf_exempt
 @api_view(http_method_names=['POST'])
 def typeform_webhook_endpoint(request):
-    with transaction.atomic():
-        json_data = request.data
-        answers_data = json_data['form_response']['answers']
-        identifier = json_data['event_id']
-        answers = typeform.parse_answers(answers_data)
-        email = answers.pop('email')
-        session = models.Session.objects.create(session_id=identifier,
-                                                email=email)
+    try:
+        with transaction.atomic():
+            json_data = request.data
+            answers_data = json_data['form_response']['answers']
+            identifier = json_data['event_id']
+            answers = typeform.parse_answers(answers_data)
+            email = answers.pop('email')
+            session = models.Session.objects.create(session_id=identifier,
+                                                    email=email)
 
-        for answer, value in answers.items():
-            models.Preference.objects.create(preference_name=answer,
-                                             value=value, session=session)
+            for answer, value in answers.items():
+                models.Preference.objects.create(preference_name=answer,
+                                                 value=value, session=session)
 
-        update_recommendations.delay(session.session_id)
-    return HttpResponse('Created correctly')
+            update_recommendations(session.session_id)
+        return HttpResponse('Created correctly')
+    except Exception as err:
+        return HttpResponse(str(err), status=500)
 
 
 class LatestSessionList(generics.RetrieveAPIView):
