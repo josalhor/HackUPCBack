@@ -132,3 +132,9 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 #CELERY_BROKER_URL = 'redis://' + REDIS_HOST + ':' + REDIS_PORT + '/0'
 #CELERY_BROKER_TRANSPORT_OPTIONS = {'visibility_timeout': 3600}
 #CELERY_RESULT_BACKEND = 'redis://' + REDIS_HOST + ':' + REDIS_PORT + '/0'
+
+
+CORS_ORIGIN_ALLOW_ALL = True
+CORS_ORIGIN_WHITELIST = [
+    "http://localhost:4200",
+]
