@@ -78,6 +78,7 @@ def count_feature_photos(urls):
             continue
         features += min(len(f), MAX_PER_IMAGE)
         appliances += min(len(a), MAX_PER_IMAGE)
+        return features, appliances
     number_succes_urls = len(urls) - url_with_errors
     assert number_succes_urls >= 0
     if number_succes_urls == 0:
