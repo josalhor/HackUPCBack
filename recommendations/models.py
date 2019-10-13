@@ -13,8 +13,7 @@ class RealEstate(models.Model):
 
 
 class RealEstateImage(models.Model):
-    real_estate_identifier = models.ForeignKey(RealEstate,
-                                               on_delete=models.CASCADE)
+    real_estate_identifier = models.ForeignKey(RealEstate, on_delete=models.CASCADE, related_name="images")
     image = models.URLField(null=False)
 
 

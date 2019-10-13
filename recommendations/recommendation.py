@@ -7,6 +7,7 @@ from django.db import transaction
 import numpy as np
 from sklearn.metrics import euclidean_distances
 from sklearn.preprocessing import StandardScaler
+from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.pipeline import Pipeline
 
 from guatajaus.celery import app
@@ -108,8 +109,40 @@ def vector_house(real_estate: models.RealEstate):
     vector[6] = appliances
     return vector
 
+
+class PonderStepTransformer(BaseEstimator, TransformerMixin):
+
+    # In theory the weights don't need to be between 0 and 1
+    # However I strongly recommend they are because we know for sure that works
+
+    # Also, the weights should come right before the visualization, affecting the dimensionality,
+    # but because when representing we have to adjust for the deviation we have to scale after
+    # we have every point and its dimensions.
+
+    # It is very important that changes in the detector get adjusted in this vector
+    PONDERATIONS = [
+        0.2, #lat
+        0.2, #long
+        1.2, # m2
+        2, #bedrooms
+        1.5, #bathrooms
+        1, #features
+        1, #appliancies
+    ]
+
+    def __init__(self):
+        self.ponderations = np.asarray(PonderStepTransformer.PONDERATIONS)
+
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X, y=None):
+        return X * self.ponderations
+
+
 STEPS = [
     ('scale', StandardScaler()),
+    ('ponder', PonderStepTransformer()),
 ]
 PIPELINE = Pipeline(STEPS)
 
