@@ -24,7 +24,10 @@ def get_coordinates_location(location):
     js = geocoder.mapquest(location, key=code_api).json
     return js['lat'], js['lng']
 
-NUMBER_PAGES = 10
+
+NUMBER_PAGES = 1
+
+
 def fetch_options(city: models.Preference) -> List[models.RealEstate]:
     segments = request_location_segments(f"{city.value}-capital")
     for k in range(1, NUMBER_PAGES + 1):
