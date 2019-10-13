@@ -1,1 +1,1 @@
-web: gunicorn guatajaus.wsgi
+web: gunicorn guatajaus.wsgi -t 60
