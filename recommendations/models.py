@@ -13,11 +13,14 @@ class RealEstate(models.Model):
 
 
 class RealEstateImage(models.Model):
-    real_estate_identifier = models.ForeignKey(RealEstate, on_delete=models.CASCADE)
+    real_estate_identifier = models.ForeignKey(RealEstate, on_delete=models.CASCADE, related_name="images")
     image = models.URLField(null=False)
 
 
 class Session(models.Model):
+    class Meta:
+        get_latest_by = ('-creation_time')
+
     PENDING = 'pending'
     IN_PROGRESS = 'in progress'
     COMPLETED = 'completed'
@@ -28,13 +31,15 @@ class Session(models.Model):
     )
     session_id = models.CharField(max_length=40, primary_key=True)
     status = models.CharField(max_length=20, choices=STATUS, default=PENDING)
-    creation_time = models.DateTimeField(auto_now_add=True, blank=False, null=False)
+    creation_time = models.DateTimeField(auto_now_add=True, blank=False,
+                                         null=False)
     email = models.EmailField(blank=False, null=False)
     recommendations = models.ManyToManyField(RealEstate)
 
 
 class Preference(models.Model):
-    session = models.ForeignKey(Session, on_delete=models.CASCADE, related_name="preferences")
+    session = models.ForeignKey(Session, on_delete=models.CASCADE,
+                                related_name="preferences")
     preference_name = models.CharField(max_length=30, blank=False, null=False)
     value = models.TextField(max_length=100, blank=True, null=True)
     is_mandatory = models.BooleanField(null=False, default=False)

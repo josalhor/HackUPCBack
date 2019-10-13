@@ -10,11 +10,17 @@ class PreferenceSerializer(serializers.ModelSerializer, BulkSerializerMixin):
         read_only_fields = ('session_id',)
         fields = ('preference_name', 'value')
 
+class RealEstateImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.RealEstateImage
+        fields = ('image',)
 
 class RealEstateSerializer(serializers.ModelSerializer):
+    images = RealEstateImageSerializer(read_only=True, many=True)
     class Meta:
         model = models.RealEstate
-        fields = '__all__'
+        fields = ('id', 'promotion_id', 'rooms', 'bathrooms', 'surface',
+        'location', 'latitude', 'longitude', 'images')
 
 
 class SessionSerializer(serializers.ModelSerializer):
